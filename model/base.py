@@ -10,7 +10,7 @@ from pprint import pformat
 from collections import defaultdict
 from torch import nn
 from torch.nn import functional as F
-from preprocess_sharc import detokenize, compute_metrics, BERT_MODEL
+from preprocess_sharc import detokenize, compute_metrics, BERT_MODEL, tokenizer
 from pytorch_pretrained_bert import BertModel, BertAdam
 from argparse import Namespace
 from pprint import pprint
@@ -102,6 +102,13 @@ class Module(nn.Module):
             output_all_encoded_layers=False)
         print(f"input_ids shape {out['input_ids'].shape}")
         print(f"bert_enc shape {out['bert_enc'].shape}")
+
+        converted_ids = tokenizer.convert_ids_to_tokens(out['input_ids'])
+        input_string = ' '.join(converted_ids)
+        input_string = input_string.replace(' ##', '')
+
+        print(f'input_string {input_string}')
+
         scores = self.score(self.dropout(bert_enc))
         out['scores'] = self.mask_scores(scores, out['pointer_mask'])
 
