@@ -101,6 +101,7 @@ class Module(nn.Module):
             out['input_mask'],
             output_all_encoded_layers=False)
         print(f"input_ids shape {out['input_ids'].shape}")
+        print(f"bert_enc shape {out['bert_enc'].shape}")
         scores = self.score(self.dropout(bert_enc))
         out['scores'] = self.mask_scores(scores, out['pointer_mask'])
 
