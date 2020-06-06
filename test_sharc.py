@@ -99,7 +99,6 @@ if __name__ == '__main__':
 
     if args.debug_print:
         preds = model.run_debug(data['train'])
-
         metrics = model.compute_metrics(preds, data['train'])
         pprint(metrics)
 
