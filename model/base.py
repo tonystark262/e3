@@ -279,7 +279,8 @@ class Module(nn.Module):
     def run_debug(self, dev):
         preds = []
         self.eval()
-        for i in trange(0, len(dev), self.args.dev_batch, desc='batch'):
+        for i in trange(0, min(2, len(dev)), self.args.dev_batch,
+                        desc='batch'):
             batch = dev[i:i + self.args.dev_batch]
             out = self(batch)
             preds += self.extract_preds(out, batch)

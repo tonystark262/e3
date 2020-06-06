@@ -68,6 +68,9 @@ if __name__ == '__main__':
     parser.add_argument('--test',
                         action='store_true',
                         help='only run evaluation')
+    parser.add_argument('--debug',
+                        action='store_true',
+                        help='only run evaluation')
 
     args = parser.parse_args()
     args.dsave = args.dsave.format(args.prefix + '-' + args.model)
@@ -94,10 +97,14 @@ if __name__ == '__main__':
 
     model.to(model.device)
 
-    if args.test:
+    if args.debug:
+        preds = model.run_debug(data['train'])
+        pprint(preds)
+        metrics = model.compute_metrics(preds, data['train'])
+        pprint(metrics)
+
+    else:
         preds = model.run_pred(data['dev'])
         pprint(preds)
         metrics = model.compute_metrics(preds, data['dev'])
         pprint(metrics)
-    else:
-        pass
