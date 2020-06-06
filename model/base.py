@@ -100,6 +100,7 @@ class Module(nn.Module):
             out['type_ids'],
             out['input_mask'],
             output_all_encoded_layers=False)
+        print(f"input_ids shape {out['input_ids'].shape}")
         scores = self.score(self.dropout(bert_enc))
         out['scores'] = self.mask_scores(scores, out['pointer_mask'])
         return out
@@ -281,6 +282,7 @@ class Module(nn.Module):
         preds = []
         self.eval()
         for i in trange(0, min(1, len(dev)), 1, desc='batch'):
+            print("-------------before processing-------------")
             batch = dev[i:i + 1]
             out = self(batch)
             pred = self.extract_preds(out, batch)
