@@ -298,12 +298,12 @@ class Module(nn.Module):
             out = self(batch)
             pred = self.extract_preds(out, batch)
             preds += pred
-            # print("-------------input-------------")
-            # for key, val in batch[0].items():
-            #     if key not in ['feat']:
-            #         pprint({key: val})
-            # print("-------------output-------------")
-            # for key, val in preds[0].items():
-            #     if key not in ['start_scores', 'end_scores']:
-            #         pprint({key: val})
+            print("-------------input-------------")
+            for key, val in batch[0].items():
+                if key not in ['feat']:
+                    pprint({key: val})
+            print("-------------output-------------")
+            for key, val in preds[0].items():
+                if key not in ['start_scores', 'end_scores']:
+                    pprint({key: val})
         return preds
