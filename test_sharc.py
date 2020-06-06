@@ -99,7 +99,10 @@ if __name__ == '__main__':
 
     if args.debug_print:
         preds = model.run_debug(data['train'])
-        pprint(preds)
+
+        for key, val in preds.items():
+            if key not in ['start_scores', 'end_scores']:
+                pprint({key: val})
         metrics = model.compute_metrics(preds, data['train'])
         pprint(metrics)
 
