@@ -103,6 +103,8 @@ class Module(nn.Module):
         print(f"input_ids shape {out['input_ids'].shape}")
         scores = self.score(self.dropout(bert_enc))
         out['scores'] = self.mask_scores(scores, out['pointer_mask'])
+
+        print(f"out_scores shape {out['scores'].shape}")
         return out
 
     def mask_scores(self, scores, mask):
@@ -287,12 +289,12 @@ class Module(nn.Module):
             out = self(batch)
             pred = self.extract_preds(out, batch)
             preds += pred
-            print("-------------input-------------")
-            for key, val in batch[0].items():
-                if key not in ['feat']:
-                    pprint({key: val})
-            print("-------------output-------------")
-            for key, val in preds[0].items():
-                if key not in ['start_scores', 'end_scores']:
-                    pprint({key: val})
+            # print("-------------input-------------")
+            # for key, val in batch[0].items():
+            #     if key not in ['feat']:
+            #         pprint({key: val})
+            # print("-------------output-------------")
+            # for key, val in preds[0].items():
+            #     if key not in ['start_scores', 'end_scores']:
+            #         pprint({key: val})
         return preds
