@@ -13,6 +13,7 @@ from torch.nn import functional as F
 from preprocess_sharc import detokenize, compute_metrics, BERT_MODEL
 from pytorch_pretrained_bert import BertModel, BertAdam
 from argparse import Namespace
+from pprint import pprint
 
 
 def warmup_linear(x, warmup=0.002):
@@ -282,5 +283,12 @@ class Module(nn.Module):
         for i in trange(0, min(1, len(dev)), 1, desc='batch'):
             batch = dev[i:i + 1]
             out = self(batch)
-            preds += self.extract_preds(out, batch)
+            pred = self.extract_preds(out, batch)
+            preds += pred
+            print("-------------input-------------")
+            pprint(batch)
+            print("-------------output-------------")
+            for key, val in preds[0].items():
+                if key not in ['start_scores', 'end_scores']:
+                    pprint({key: val})
         return preds
