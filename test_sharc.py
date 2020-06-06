@@ -68,7 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--test',
                         action='store_true',
                         help='only run evaluation')
-    parser.add_argument('--debug',
+    parser.add_argument('--debug_print',
                         action='store_true',
                         help='only run evaluation')
 
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     model.to(model.device)
 
-    if args.debug:
+    if args.debug_print:
         preds = model.run_debug(data['train'])
         pprint(preds)
         metrics = model.compute_metrics(preds, data['train'])
