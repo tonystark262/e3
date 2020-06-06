@@ -103,7 +103,8 @@ class Module(nn.Module):
         print(f"input_ids shape {out['input_ids'].shape}")
         print(f"bert_enc shape {out['bert_enc'].shape}")
 
-        converted_ids = tokenizer.convert_ids_to_tokens(out['input_ids'])
+        converted_ids = tokenizer.convert_ids_to_tokens(
+            out['input_ids'].cpu().detach().reshape(-1).tolist())
         input_string = ' '.join(converted_ids)
         input_string = input_string.replace(' ##', '')
 
