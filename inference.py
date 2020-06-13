@@ -185,9 +185,12 @@ if __name__ == '__main__':
     with open(args.fin) as f:
         raw = json.load(f)
 
+    index = None
+
     for i in range(len(raw)):
         if len(raw[i]['evidence']) > 0:
             raw = raw[i:i + 1]
+            index = i
             break
 
     pprint(raw)
@@ -200,6 +203,8 @@ if __name__ == '__main__':
         print('loading {}'.format(fretrieval))
         with open(fretrieval) as f:
             retrieval_preds = json.load(f)
+
+        retrieval_preds = retrieval_preds[index:index + 1]
     else:
         print('resuming retrieval from ' + args.retrieval)
         retrieval = Module.load(args.retrieval)
