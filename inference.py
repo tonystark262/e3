@@ -218,12 +218,19 @@ if __name__ == '__main__':
 
     if args.editor:
         editor_data = preprocess_editor(data, retrieval_preds)
+
+        print('editor data')
+        for key, val in editor_data[0].items():
+            if 'scores' not in key and 'words' != key:
+                pprint({key: val})
+
         editor = EditorModule.load(args.editor,
                                    override_args={'data': args.data})
         editor.to(editor.device)
         raw_editor_preds = editor.run_pred(editor_data)
         editor_preds = merge_edits(retrieval_preds, raw_editor_preds)
 
+        print('editor preds')
         for key, val in editor_preds[0].items():
             if 'scores' not in key and 'words' != key:
                 pprint({key: val})
