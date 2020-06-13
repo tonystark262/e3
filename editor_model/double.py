@@ -55,6 +55,8 @@ class Module(Base):
             if 'eos' in after:
                 after = after[:after.index('eos')]
             s, e = ex['span']
+            print(ex['inp'])
+            print(s, e)
             middle = detokenize(ex['inp'][s:e + 1])
             print('$$$$$$$$$$$$$$$$$$$$$$')
             print(middle)
