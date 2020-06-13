@@ -185,7 +185,7 @@ if __name__ == '__main__':
     with open(args.fin) as f:
         raw = json.load(f)[:1]
 
-    print(raw)
+    pprint(raw)
 
     print('preprocessing data')
     data = preprocess(raw)
@@ -214,7 +214,7 @@ if __name__ == '__main__':
         raw_editor_preds = editor.run_pred(editor_data)
         editor_preds = merge_edits(retrieval_preds, raw_editor_preds)
 
-        for key, val in editor_preds[0]:
+        for key, val in editor_preds[0].items():
             if 'scores' not in key:
                 pprint({key: val})
 
