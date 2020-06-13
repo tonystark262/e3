@@ -215,7 +215,7 @@ if __name__ == '__main__':
         editor_preds = merge_edits(retrieval_preds, raw_editor_preds)
 
         for key, val in editor_preds[0].items():
-            if 'scores' not in key:
+            if 'scores' not in key and 'words' != key:
                 pprint({key: val})
 
         with open(os.path.join(args.dout, 'editor_preds.json'), 'wt') as f:
