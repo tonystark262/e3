@@ -183,9 +183,9 @@ if __name__ == '__main__':
         os.makedirs(args.dout)
 
     with open(args.fin) as f:
-        raw = json.load(f)
+        raw = json.load(f)[:1]
 
-    print(type(raw))
+    print(raw)
 
     print('preprocessing data')
     data = preprocess(raw)
@@ -213,6 +213,10 @@ if __name__ == '__main__':
         editor.to(editor.device)
         raw_editor_preds = editor.run_pred(editor_data)
         editor_preds = merge_edits(retrieval_preds, raw_editor_preds)
+
+        for key, val in editor_preds[0]:
+            if 'scores' not in key:
+                pprint({key: val})
 
         with open(os.path.join(args.dout, 'editor_preds.json'), 'wt') as f:
             json.dump(editor_preds, f, indent=2)
