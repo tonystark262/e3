@@ -24,7 +24,7 @@ def preprocess_editor():
     for i in range(len(tokens)):
         if 'shoe' in tokens[i]:
             e = i
-            break
+            # break
 
     ex = {
         'utterance_id': utterance_id,
