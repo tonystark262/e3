@@ -30,6 +30,7 @@ def preprocess_editor():
         'utterance_id': utterance_id,
         'span': (s, e),
         'inp': sentence,
+        'tokens': tokens,
         'type_ids': torch.tensor(torch.ones(len(tokens)), dtype=torch.long),
         'inp_ids': torch.tensor(inp_ids, dtype=torch.long),
         'inp_mask': torch.tensor(torch.ones(len(tokens)), dtype=torch.long),
