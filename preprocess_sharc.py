@@ -61,11 +61,15 @@ def filter_chunk(answer):
 def detokenize(tokens):
     words = []
     for i, t in enumerate(tokens):
-        if t['orig_id'] is None or (i and
-                                    t['orig_id'] == tokens[i - 1]['orig_id']):
-            continue
+        if isinstance(t, type('')):
+            words.append(t)
         else:
-            words.append(t['orig'])
+            if t['orig_id'] is None or (
+                    i and t['orig_id'] == tokens[i - 1]['orig_id']):
+                continue
+            else:
+                words.append(t['orig'])
+
     return revtok.detokenize(words)
 
 
