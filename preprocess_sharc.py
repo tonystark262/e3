@@ -62,7 +62,7 @@ def detokenize(tokens):
     words = []
     for i, t in enumerate(tokens):
         if isinstance(t, type('')):
-            words.append(t)
+            words.append(t + ' ')
         else:
             if t['orig_id'] is None or (
                     i and t['orig_id'] == tokens[i - 1]['orig_id']):
