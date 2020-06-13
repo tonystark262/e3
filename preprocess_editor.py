@@ -13,7 +13,8 @@ from preprocess_sharc import detokenize, tokenizer, make_tag
 def get_orig(tokens):
     words = []
     for i, t in enumerate(tokens):
-        if t['orig_id'] is None or (i and t['orig_id'] == tokens[i-1]['orig_id']):
+        if t['orig_id'] is None or (i and
+                                    t['orig_id'] == tokens[i - 1]['orig_id']):
             continue
         else:
             words.append(t['orig'].strip().lower())
@@ -26,10 +27,12 @@ nlp = None
 def trim_span(snippet, span):
     global nlp
     if nlp is None:
-        nlp = stanfordnlp.Pipeline(processors='tokenize,pos,lemma', models_dir='cache')
+        nlp = stanfordnlp.Pipeline(processors='tokenize,pos,lemma',
+                                   models_dir='cache')
     bad_pos = {'DET', 'ADP', '#', 'AUX', 'SCONJ', 'CCONJ', 'PUNCT'}
     s, e = span
-    words = nlp(' '.join([t['orig'] for t in snippet[s:e+1]])).sentences[0].words
+    words = nlp(' '.join([t['orig']
+                          for t in snippet[s:e + 1]])).sentences[0].words
     while words and words[0].upos in bad_pos:
         words = words[1:]
         s += 1
@@ -50,12 +53,14 @@ def create_split(trees, vocab, max_len=300, train=True):
             # trim the span a bit to facilitate editing
             s, e = trim_span(snippet, span)
             if e >= s:
-                inp = [make_tag('[CLS]')] + snippet[s:e+1] + [make_tag('[SEP]')]
+                inp = [make_tag('[CLS]')
+                       ] + snippet[s:e + 1] + [make_tag('[SEP]')]
                 # account for prepended tokens
                 new_s, new_e = s + len(inp), e + len(inp)
                 inp += snippet + [make_tag('[SEP]')]
-                type_ids = [0] + [0] * (e+1-s) + [1] * (len(snippet) + 2)
-                inp_ids = tokenizer.convert_tokens_to_ids([t['sub'] for t in inp])
+                type_ids = [0] + [0] * (e + 1 - s) + [1] * (len(snippet) + 2)
+                inp_ids = tokenizer.convert_tokens_to_ids(
+                    [t['sub'] for t in inp])
                 inp_mask = [1] * len(inp)
 
                 assert len(type_ids) == len(inp) == len(inp_ids)
@@ -75,7 +80,9 @@ def create_split(trees, vocab, max_len=300, train=True):
 
                 out = get_orig(q_tok)
                 if train:
-                    out_vids = torch.tensor(vocab.word2index(out + ['eos'], train=train), dtype=torch.long)
+                    out_vids = torch.tensor(vocab.word2index(out + ['eos'],
+                                                             train=train),
+                                            dtype=torch.long)
                 else:
                     out_vids = None
 
@@ -96,26 +103,27 @@ def create_split(trees, vocab, max_len=300, train=True):
 
 def segment(ex, vocab, threshold=0.25):
     s, e = ex['span']
-    span = ex['inp'][s:e+1]
+    span = ex['inp'][s:e + 1]
     span_str = detokenize(span)
     ques = ex['question']
 
     best_i, best_j, best_score = None, None, -1
     for i in range(len(ques)):
         for j in range(i, len(ques)):
-            chunk = detokenize(ques[i:j+1])
+            chunk = detokenize(ques[i:j + 1])
             score = compute_f1(span_str, chunk)
             if score > best_score:
                 best_score, best_i, best_j = score, i, j
     if best_score > threshold:
         before = ex['question'][:best_i]
-        after = ex['question'][best_j+1:]
+        after = ex['question'][best_j + 1:]
         ret = {
             'before': get_orig(before),
             'after': get_orig(after),
         }
         ret.update({
-            k + '_vids': torch.tensor(vocab.word2index(v + ['eos']), dtype=torch.long)
+            k + '_vids': torch.tensor(vocab.word2index(v + ['eos']),
+                                      dtype=torch.long)
             for k, v in ret.items()
         })
         return ret
@@ -149,10 +157,14 @@ if __name__ == '__main__':
             ex.update(ba)
             train_filtered.append(ex)
 
-    print('filtered train from {} to {}'.format(len(train), len(train_filtered)))
+    print('filtered train from {} to {}'.format(len(train),
+                                                len(train_filtered)))
     print('vocab size {}'.format(len(vocab)))
 
-    emb = embeddings.ConcatEmbedding([embeddings.GloveEmbedding(), embeddings.KazumaCharEmbedding()], default='zero')
+    emb = embeddings.ConcatEmbedding(
+        [embeddings.GloveEmbedding(),
+         embeddings.KazumaCharEmbedding()],
+        default='zero')
     mat = torch.Tensor([emb.emb(w) for w in vocab._index2word])
     torch.save({'vocab': vocab, 'emb': mat}, dout + '/vocab.pt')
     torch.save(train_filtered, dout + '/proc_train.pt')

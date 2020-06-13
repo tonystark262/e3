@@ -10,7 +10,6 @@ from preprocess_sharc import detokenize
 
 
 class Module(Base):
-
     def __init__(self, args, vocab=None):
         super().__init__(args)
         self.denc = self.args.bert_hidden_size
@@ -29,13 +28,22 @@ class Module(Base):
             for k in ['inp_ids', 'type_ids', 'inp_mask']
         }
         feat['inp_mask'] = feat['inp_mask'].float()
-        feat['out_vids'] = pad_sequence([e['out_vids'] for e in batch], batch_first=True, padding_value=-1).to(self.device) if self.training else None
+        feat['out_vids'] = pad_sequence(
+            [e['out_vids'] for e in batch], batch_first=True,
+            padding_value=-1).to(self.device) if self.training else None
         return feat
 
     def forward(self, batch):
         out = self.create_input_tensors(batch)
-        out['bert_enc'], _ = bert_enc, _ = self.bert(out['inp_ids'], out['type_ids'], out['inp_mask'], output_all_encoded_layers=False)
-        out['dec'] = self.decoder.forward(bert_enc, out['inp_mask'], out['out_vids'], max_decode_len=30)
+        out['bert_enc'], _ = bert_enc, _ = self.bert(
+            out['inp_ids'],
+            out['type_ids'],
+            out['inp_mask'],
+            output_all_encoded_layers=False)
+        out['dec'] = self.decoder.forward(bert_enc,
+                                          out['inp_mask'],
+                                          out['out_vids'],
+                                          max_decode_len=30)
         return out
 
     def extract_preds(self, out, batch):
@@ -51,8 +59,16 @@ class Module(Base):
         return preds
 
     def compute_loss(self, out, batch):
-        return {'dec': F.cross_entropy(out['dec'].view(-1, len(self.vocab)), out['out_vids'].view(-1), ignore_index=-1)}
+        return {
+            'dec':
+            F.cross_entropy(out['dec'].view(-1, len(self.vocab)),
+                            out['out_vids'].view(-1),
+                            ignore_index=-1)
+        }
 
     def compute_metrics(self, preds, batch):
-        f1s = [compute_f1(p['answer'], detokenize(e['question'])) for p, e in zip(preds, batch)]
+        f1s = [
+            compute_f1(p['answer'], detokenize(e['question']))
+            for p, e in zip(preds, batch)
+        ]
         return {'f1': sum(f1s) / len(f1s)}

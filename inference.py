@@ -12,11 +12,18 @@ from preprocess_editor import trim_span
 def preprocess(data):
     for ex in data:
         ex['ann'] = a = {
-            'snippet': tokenize(ex['snippet']),
-            'question': tokenize(ex['question']),
-            'scenario': tokenize(ex['scenario']),
-            'hanswer': [{'yes': 1, 'no': 0}[h['follow_up_answer'].lower()] for h in ex['history']],
-            'hquestion': [tokenize(h['follow_up_question']) for h in ex['history']],
+            'snippet':
+            tokenize(ex['snippet']),
+            'question':
+            tokenize(ex['question']),
+            'scenario':
+            tokenize(ex['scenario']),
+            'hanswer': [{
+                'yes': 1,
+                'no': 0
+            }[h['follow_up_answer'].lower()] for h in ex['history']],
+            'hquestion':
+            [tokenize(h['follow_up_question']) for h in ex['history']],
         }
         inp = [make_tag('[CLS]')] + a['question']
         type_ids = [0] * len(inp)
@@ -36,7 +43,8 @@ def preprocess(data):
         offset = len(inp)
         inp += a['snippet']
         snippet_end = len(inp)
-        pointer_mask += [1] * len(a['snippet'])  # where can the answer pointer land
+        pointer_mask += [1] * len(
+            a['snippet'])  # where can the answer pointer land
         inp += [sep]
         start = len(inp)
         inp += [make_tag('scenario')] + a['scenario'] + [sep]
@@ -46,7 +54,10 @@ def preprocess(data):
         hist_offsets = []
         for hq, ha in zip(a['hquestion'], a['hanswer']):
             start = len(inp)
-            inp += [make_tag('question')] + hq + [make_tag('answer'), [make_tag('yes'), make_tag('no')][ha]]
+            inp += [make_tag('question')] + hq + [
+                make_tag('answer'), [make_tag('yes'),
+                                     make_tag('no')][ha]
+            ]
             end = len(inp)
             hist_offsets.append((start, end))
         inp += [sep]
@@ -101,11 +112,12 @@ def preprocess_editor(orig_data, preds):
             snippet = orig_ex['feat']['inp'][sstart:send]
             s, e = trim_span(snippet, (s, e))
             if e >= s:
-                inp = [make_tag('[CLS]')] + snippet[s:e+1] + [make_tag('[SEP]')]
+                inp = [make_tag('[CLS]')
+                       ] + snippet[s:e + 1] + [make_tag('[SEP]')]
                 # account for prepended tokens
                 new_s, new_e = s + len(inp), e + len(inp)
                 inp += snippet + [make_tag('[SEP]')]
-                type_ids = [0] + [0] * (e+1-s) + [1] * (len(snippet) + 2)
+                type_ids = [0] + [0] * (e + 1 - s) + [1] * (len(snippet) + 2)
                 inp_ids = convert_to_ids(inp)
                 inp_mask = [1] * len(inp)
 
@@ -148,13 +160,23 @@ def merge_edits(preds, edits):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--retrieval', required=True, help='retrieval model to use')
+    parser.add_argument('--retrieval',
+                        required=True,
+                        help='retrieval model to use')
     parser.add_argument('--editor', help='editor model to use (optional)')
-    parser.add_argument('--fin', default='sharc/json/sharc_dev.json', help='input data file')
-    parser.add_argument('--dout', default=os.getcwd(), help='directory to store output files')
-    parser.add_argument('--data', default='sharc/editor_disjoint', help='editor data')
+    parser.add_argument('--fin',
+                        default='sharc/json/sharc_dev.json',
+                        help='input data file')
+    parser.add_argument('--dout',
+                        default=os.getcwd(),
+                        help='directory to store output files')
+    parser.add_argument('--data',
+                        default='sharc/editor_disjoint',
+                        help='editor data')
     parser.add_argument('--verify', action='store_true', help='run evaluation')
-    parser.add_argument('--force', action='store_true', help='overwrite retrieval predictions')
+    parser.add_argument('--force',
+                        action='store_true',
+                        help='overwrite retrieval predictions')
     args = parser.parse_args()
 
     if not os.path.isdir(args.dout):
@@ -162,6 +184,8 @@ if __name__ == '__main__':
 
     with open(args.fin) as f:
         raw = json.load(f)
+
+    print(type(raw))
 
     print('preprocessing data')
     data = preprocess(raw)
@@ -184,7 +208,8 @@ if __name__ == '__main__':
 
     if args.editor:
         editor_data = preprocess_editor(data, retrieval_preds)
-        editor = EditorModule.load(args.editor, override_args={'data': args.data})
+        editor = EditorModule.load(args.editor,
+                                   override_args={'data': args.data})
         editor.to(editor.device)
         raw_editor_preds = editor.run_pred(editor_data)
         editor_preds = merge_edits(retrieval_preds, raw_editor_preds)

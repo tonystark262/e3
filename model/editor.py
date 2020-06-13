@@ -7,7 +7,6 @@ from preprocess_sharc import CLASSES, detokenize
 
 
 class Decoder(nn.Module):
-
     def __init__(self, denc, emb, dropout=0):
         super().__init__()
         dhid = denc
@@ -20,9 +19,9 @@ class Decoder(nn.Module):
 
         self.attn_scorer = nn.Linear(denc, 1)
 
-        self.rnn = nn.LSTMCell(denc+self.demb, dhid)
+        self.rnn = nn.LSTMCell(denc + self.demb, dhid)
 
-        self.proj = nn.Linear(denc+dhid, self.demb)
+        self.proj = nn.Linear(denc + dhid, self.demb)
 
         self.emb0 = nn.Parameter(torch.Tensor(self.demb))
         self.h0 = nn.Parameter(torch.Tensor(dhid))
@@ -42,9 +41,11 @@ class Decoder(nn.Module):
         for t in range(max_t):
             h_t = self.dropout(h_t)
             # attend to input
-            inp_score = enc.bmm(h_t.unsqueeze(2)).squeeze(2) - (1-inp_mask) * 1e20
+            inp_score = enc.bmm(
+                h_t.unsqueeze(2)).squeeze(2) - (1 - inp_mask) * 1e20
             inp_score_norm = F.softmax(inp_score, dim=1)
-            inp_attn = inp_score_norm.unsqueeze(2).expand_as(enc).mul(enc).sum(1)
+            inp_attn = inp_score_norm.unsqueeze(2).expand_as(enc).mul(enc).sum(
+                1)
 
             rnn_inp = self.dropout(torch.cat([inp_attn, emb_t], dim=1))
 
@@ -64,7 +65,6 @@ class Decoder(nn.Module):
 
 
 class Module(Base):
-
     def __init__(self, args):
         super().__init__(args)
         vocab = torch.load('{}/vocab.pt'.format(args.data))
@@ -81,12 +81,20 @@ class Module(Base):
         out['edit_scores'] = decs = []
         out['edit_labels'] = labels = []
         for ex, enc, spans in zip(batch, out['bert_enc'], out['spans']):
-            inp = [enc[s:e+1] for s, e in spans]
+            inp = [enc[s:e + 1] for s, e in spans]
             lens = [t.size(0) for t in inp]
             max_len = max(lens)
-            mask = torch.tensor([[1] * l + [0] * (max_len-l) for l in lens], device=self.device, dtype=torch.float)
+            mask = torch.tensor([[1] * l + [0] * (max_len - l) for l in lens],
+                                device=self.device,
+                                dtype=torch.float)
             inp = pad_sequence(inp, batch_first=True, padding_value=0)
-            label = pad_sequence([torch.tensor(o, dtype=torch.long) for o in ex['edit_num']['out_vocab_id']], batch_first=True, padding_value=-1).to(self.device) if self.training else None
+            label = pad_sequence([
+                torch.tensor(o, dtype=torch.long)
+                for o in ex['edit_num']['out_vocab_id']
+            ],
+                                 batch_first=True,
+                                 padding_value=-1).to(
+                                     self.device) if self.training else None
             dec = self.decoder(inp, mask, label)
             decs.append(dec)
             labels.append(label)
@@ -96,14 +104,24 @@ class Module(Base):
         loss = super().compute_loss(out, batch)
         edit_loss = 0
         for ex, dec in zip(batch, out['edit_scores']):
-            label = pad_sequence([torch.tensor(o, dtype=torch.long) for o in ex['edit_num']['out_vocab_id']], batch_first=True, padding_value=-1).to(self.device)
-            edit_loss += F.cross_entropy(dec.view(-1, dec.size(-1)), label.view(-1), ignore_index=-1)
+            label = pad_sequence([
+                torch.tensor(o, dtype=torch.long)
+                for o in ex['edit_num']['out_vocab_id']
+            ],
+                                 batch_first=True,
+                                 padding_value=-1).to(self.device)
+            edit_loss += F.cross_entropy(dec.view(-1, dec.size(-1)),
+                                         label.view(-1),
+                                         ignore_index=-1)
         loss['edit'] = edit_loss / len(batch) * self.args.loss_editor_weight
         return loss
 
     def extract_preds(self, out, batch, top_k=20):
         preds = []
-        for ex, clf_i, retrieve_i, spans_i, edit_scores_i in zip(batch, out['clf_scores'].max(1)[1].tolist(), out['retrieve_scores'].max(1)[1].tolist(), out['spans'], out['edit_scores']):
+        for ex, clf_i, retrieve_i, spans_i, edit_scores_i in zip(
+                batch, out['clf_scores'].max(1)[1].tolist(),
+                out['retrieve_scores'].max(1)[1].tolist(), out['spans'],
+                out['edit_scores']):
             a = CLASSES[clf_i]
             edit_ids = edit_scores_i.max(2)[1].tolist()
             edits = []
@@ -115,7 +133,7 @@ class Module(Base):
             r = None
             if a == 'more':
                 s, e = spans_i[retrieve_i]
-                r = detokenize(ex['feat']['inp'][s:e+1])
+                r = detokenize(ex['feat']['inp'][s:e + 1])
                 a = edits[retrieve_i]
             preds.append({
                 'utterance_id': ex['utterance_id'],
