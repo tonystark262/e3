@@ -204,7 +204,7 @@ if __name__ == '__main__':
         with open(fretrieval) as f:
             retrieval_preds = json.load(f)
 
-        retrieval_preds = retrieval_preds[index:index + 1]
+        # retrieval_preds = retrieval_preds[index:index + 1]
     else:
         print('resuming retrieval from ' + args.retrieval)
         retrieval = Module.load(args.retrieval)
