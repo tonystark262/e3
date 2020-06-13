@@ -12,19 +12,19 @@ from preprocess_editor import trim_span
 def preprocess_editor():
     data = []
     sentence = "If you’re not a UK resident, you don’t usually pay UK tax on your pension. But you might have to pay tax in the country you live in. There are a few exceptions for example, UK civil service pensions will always be taxed in the UK"
-    sentence = "[CLS] I bought nike shoes [SEP] I do not like the shoes [SEP] The delivery was bad [SEP]"
+    # sentence = "[CLS] I bought nike shoes [SEP] I do not like the shoes [SEP] The delivery was bad [SEP]"
     utterance_id = 123456
     tokens, inp_ids = convert_to_ids_manual(sentence)
 
     for i in range(len(tokens)):
-        if 'not' in tokens[i]:
+        if 'a' in tokens[i]:
             s = i
             break
 
     for i in range(len(tokens)):
-        if 'shoe' in tokens[i]:
+        if 'resident' in tokens[i]:
             e = i
-            # break
+            break
 
     ex = {
         'utterance_id': utterance_id,
