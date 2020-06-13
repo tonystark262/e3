@@ -187,13 +187,13 @@ if __name__ == '__main__':
 
     index = None
 
-    for i in range(len(raw)):
-        if len(raw[i]['evidence']) > 0:
-            raw = raw[i:i + 1]
-            index = i
-            break
+    # for i in range(len(raw)):
+    #     if len(raw[i]['evidence']) > 0:
+    #         raw = raw[i:i + 1]
+    #         index = i
+    #         break
 
-    pprint(raw)
+    # pprint(raw)
 
     print('preprocessing data')
     data = preprocess(raw)
@@ -219,21 +219,27 @@ if __name__ == '__main__':
     if args.editor:
         editor_data = preprocess_editor(data, retrieval_preds)
 
-        print('editor data')
-        for key, val in editor_data[0].items():
-            if 'scores' not in key and 'words' != key:
-                pprint({key: val})
+        # print('editor data')
+        # for key, val in editor_data[0].items():
+        #     if 'scores' not in key and 'words' != key:
+        #         pprint({key: val})
 
         editor = EditorModule.load(args.editor,
                                    override_args={'data': args.data})
         editor.to(editor.device)
         raw_editor_preds = editor.run_pred(editor_data)
-        editor_preds = merge_edits(retrieval_preds, raw_editor_preds)
 
-        print('editor preds')
-        for key, val in editor_preds[0].items():
+        print('raw editor preds')
+        for key, val in raw_editor_preds[0].items():
             if 'scores' not in key and 'words' != key:
                 pprint({key: val})
+
+        editor_preds = merge_edits(retrieval_preds, raw_editor_preds)
+
+        # print('editor preds')
+        # for key, val in editor_preds[0].items():
+        #     if 'scores' not in key and 'words' != key:
+        #         pprint({key: val})
 
         with open(os.path.join(args.dout, 'editor_preds.json'), 'wt') as f:
             json.dump(editor_preds, f, indent=2)
