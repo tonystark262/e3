@@ -183,7 +183,12 @@ if __name__ == '__main__':
         os.makedirs(args.dout)
 
     with open(args.fin) as f:
-        raw = json.load(f)[:1]
+        raw = json.load(f)
+
+    for i in range(len(raw)):
+        if len(raw[i]['evidence']) > 0:
+            raw = raw[i:i + 1]
+            break
 
     pprint(raw)
 
