@@ -3,6 +3,7 @@ from torch.nn.utils.rnn import pad_sequence
 from editor_model.base import Module as Base
 from model.editor import Decoder
 from preprocess_sharc import detokenize
+from pprint import pprint
 
 
 class Module(Base):
@@ -26,6 +27,8 @@ class Module(Base):
 
     def forward(self, batch):
         out = self.create_input_tensors(batch)
+        print('out')
+        pprint(out)
         out['bert_enc'], _ = bert_enc, _ = self.bert(
             out['inp_ids'],
             out['type_ids'],

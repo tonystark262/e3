@@ -145,6 +145,7 @@ def preprocess_editor(orig_data, preds):
                     'inp_mask': torch.tensor(inp_mask, dtype=torch.long),
                 }
                 data.append(ex)
+
     return data
 
 
@@ -217,7 +218,7 @@ if __name__ == '__main__':
     #     pprint(compute_metrics(retrieval_preds, raw))
 
     if args.editor:
-        editor_data = preprocess_editor(data, retrieval_preds)
+        editor_data = preprocess_editor(data, retrieval_preds)[:1]
 
         print('editor data')
         for key, val in editor_data[0].items():
