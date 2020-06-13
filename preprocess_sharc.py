@@ -11,19 +11,24 @@ from pprint import pprint
 from collections import defaultdict
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 
-
 FORCE = True
 MAX_LEN = 300
 BERT_MODEL = 'cache/bert-base-uncased.tar.gz'
 BERT_VOCAB = 'cache/bert-base-uncased-vocab.txt'
 LOWERCASE = True
-tokenizer = BertTokenizer.from_pretrained(BERT_VOCAB, do_lower_case=LOWERCASE, cache_dir=None)
+tokenizer = BertTokenizer.from_pretrained(BERT_VOCAB,
+                                          do_lower_case=LOWERCASE,
+                                          cache_dir=None)
 MATCH_IGNORE = {'do', 'have', '?'}
 SPAN_IGNORE = set(string.punctuation)
 CLASSES = ['yes', 'no', 'irrelevant', 'more']
 
-
 nlp = None
+
+
+def convert_to_ids_manual(sentence):
+    tokens = tokenizer.tokenize(sentence.strip())
+    return tokens, tokenizer.convert_tokens_to_ids(tokens)
 
 
 def tokenize(doc):
@@ -56,7 +61,8 @@ def filter_chunk(answer):
 def detokenize(tokens):
     words = []
     for i, t in enumerate(tokens):
-        if t['orig_id'] is None or (i and t['orig_id'] == tokens[i-1]['orig_id']):
+        if t['orig_id'] is None or (i and
+                                    t['orig_id'] == tokens[i - 1]['orig_id']):
             continue
         else:
             words.append(t['orig'])
@@ -72,7 +78,10 @@ def compute_metrics(preds, data):
     with NamedTemporaryFile('w') as fp, NamedTemporaryFile('w') as fg:
         json.dump(preds, fp)
         fp.flush()
-        json.dump([{'utterance_id': e['utterance_id'], 'answer': e['answer']} for e in data], fg)
+        json.dump([{
+            'utterance_id': e['utterance_id'],
+            'answer': e['answer']
+        } for e in data], fg)
         fg.flush()
         results = evaluator.evaluate(fg.name, fp.name, mode='combined')
         results['combined'] = results['macro_accuracy'] * results['bleu_4']
@@ -87,11 +96,12 @@ def get_span(context, answer):
         if stop:
             break
         for j in range(i, len(context)):
-            chunk = filter_chunk(context[i:j+1])
+            chunk = filter_chunk(context[i:j + 1])
             if '\n' in chunk or '*' in chunk:
                 continue
             score = editdistance.eval(answer, chunk)
-            if score < best_score or (score == best_score and j-i < best[1]-best[0]):
+            if score < best_score or (score == best_score
+                                      and j - i < best[1] - best[0]):
                 best, best_score = (i, j), score
             if chunk == answer:
                 stop = True
@@ -109,12 +119,12 @@ def get_bullets(context):
     pairs = list(zip(indices, indices[1:] + [len(context)]))
     cleaned = []
     for s, e in pairs:
-        while not context[e-1]['sub'].strip():
+        while not context[e - 1]['sub'].strip():
             e -= 1
         while not context[s]['sub'].strip() or context[s]['sub'] == '*':
             s += 1
         if e - s > 2 and e - 2 < 45:
-            cleaned.append((s, e-1))
+            cleaned.append((s, e - 1))
     return cleaned
 
 
@@ -128,12 +138,14 @@ def extract_clauses(data, tokenizer):
     bullets = get_bullets(t_snippet)
     all_spans = spans + bullets
     coverage = [False] * len(t_snippet)
-    sorted_by_len = sorted(all_spans,  key=lambda tup: tup[1] - tup[0], reverse=True)
+    sorted_by_len = sorted(all_spans,
+                           key=lambda tup: tup[1] - tup[0],
+                           reverse=True)
 
     ok = []
     for s, e in sorted_by_len:
-        if not all(coverage[s:e+1]):
-            for i in range(s, e+1):
+        if not all(coverage[s:e + 1]):
+            for i in range(s, e + 1):
                 coverage[i] = True
             ok.append((s, e))
     ok.sort(key=lambda tup: tup[0])
@@ -145,15 +157,25 @@ def extract_clauses(data, tokenizer):
         best_score = float('inf')
         best = None
         for i, (s, e) in enumerate(ok):
-            score = editdistance.eval(detokenize(tq), detokenize(t_snippet[s:e+1]))
+            score = editdistance.eval(detokenize(tq),
+                                      detokenize(t_snippet[s:e + 1]))
             if score < best_score:
                 best_score, best = score, i
                 clauses[i] = tq
         match[q] = best
         s, e = ok[best]
-        match_text[q] = detokenize(t_snippet[s:e+1])
+        match_text[q] = detokenize(t_snippet[s:e + 1])
 
-    return {'questions': {q: tq for q, tq in zip(questions, t_questions)}, 'snippet': snippet, 't_snippet': t_snippet, 'spans': ok, 'match': match, 'match_text': match_text, 'clauses': clauses}
+    return {
+        'questions': {q: tq
+                      for q, tq in zip(questions, t_questions)},
+        'snippet': snippet,
+        't_snippet': t_snippet,
+        'spans': ok,
+        'match': match,
+        'match_text': match_text,
+        'clauses': clauses
+    }
 
 
 if __name__ == '__main__':
@@ -174,13 +196,18 @@ if __name__ == '__main__':
                     if ex['tree_id'] in tasks:
                         task = tasks[ex['tree_id']]
                     else:
-                        task = tasks[ex['tree_id']] = {'snippet': ex['snippet'], 'questions': set()}
+                        task = tasks[ex['tree_id']] = {
+                            'snippet': ex['snippet'],
+                            'questions': set()
+                        }
                     for h in ex['history'] + ex['evidence']:
                         task['questions'].add(h['follow_up_question'])
                     if ex['answer'].lower() not in {'yes', 'no', 'irrelevant'}:
                         task['questions'].add(ex['answer'])
                 keys = sorted(list(tasks.keys()))
-                vals = [extract_clauses(tasks[k], tokenizer) for k in tqdm(keys)]
+                vals = [
+                    extract_clauses(tasks[k], tokenizer) for k in tqdm(keys)
+                ]
                 mapping = {k: v for k, v in zip(keys, vals)}
                 with open(ftree, 'wt') as f:
                     json.dump(mapping, f, indent=2)
@@ -194,19 +221,47 @@ if __name__ == '__main__':
                     ex_answer = ex['answer'].lower()
                     m = mapping[ex['tree_id']]
                     ex['ann'] = a = {
-                        'snippet': m['t_snippet'],
-                        'clauses': m['clauses'],
-                        'question': tokenize(ex['question']),
-                        'scenario': tokenize(ex['scenario']),
-                        'answer': tokenize(ex['answer']),
-                        'hanswer': [{'yes': 1, 'no': 0}[h['follow_up_answer'].lower()] for h in ex['history']],
-                        'hquestion': [m['questions'][h['follow_up_question']] for h in ex['history']],
-                        'hquestion_span': [m['match'][h['follow_up_question']] for h in ex['history']],
-                        'hquestion_span_text': [m['match_text'][h['follow_up_question']] for h in ex['history']],
-                        'sentailed': [m['questions'][h['follow_up_question']] for h in ex['evidence']],
-                        'sentailed_span': [m['match'][h['follow_up_question']] for h in ex['evidence']],
-                        'sentailed_span_text': [m['match_text'][h['follow_up_question']] for h in ex['evidence']],
-                        'spans': m['spans'],
+                        'snippet':
+                        m['t_snippet'],
+                        'clauses':
+                        m['clauses'],
+                        'question':
+                        tokenize(ex['question']),
+                        'scenario':
+                        tokenize(ex['scenario']),
+                        'answer':
+                        tokenize(ex['answer']),
+                        'hanswer': [{
+                            'yes': 1,
+                            'no': 0
+                        }[h['follow_up_answer'].lower()]
+                                    for h in ex['history']],
+                        'hquestion': [
+                            m['questions'][h['follow_up_question']]
+                            for h in ex['history']
+                        ],
+                        'hquestion_span': [
+                            m['match'][h['follow_up_question']]
+                            for h in ex['history']
+                        ],
+                        'hquestion_span_text': [
+                            m['match_text'][h['follow_up_question']]
+                            for h in ex['history']
+                        ],
+                        'sentailed': [
+                            m['questions'][h['follow_up_question']]
+                            for h in ex['evidence']
+                        ],
+                        'sentailed_span': [
+                            m['match'][h['follow_up_question']]
+                            for h in ex['evidence']
+                        ],
+                        'sentailed_span_text': [
+                            m['match_text'][h['follow_up_question']]
+                            for h in ex['evidence']
+                        ],
+                        'spans':
+                        m['spans'],
                     }
                     if ex_answer not in CLASSES:
                         a['answer_span'] = m['match'][ex['answer']]
@@ -235,9 +290,10 @@ if __name__ == '__main__':
                     ]
                     pointer_mask += [0, 0, 1, 1, 1, 0, 0]
                     offset = len(inp)
-                    spans = [(s+offset, e+offset) for s, e in a['spans']]
+                    spans = [(s + offset, e + offset) for s, e in a['spans']]
                     inp += a['snippet']
-                    pointer_mask += [1] * len(a['snippet'])  # where can the answer pointer land
+                    pointer_mask += [1] * len(
+                        a['snippet'])  # where can the answer pointer land
                     inp += [sep]
                     start = len(inp)
                     inp += [make_tag('scenario')] + a['scenario'] + [sep]
@@ -247,7 +303,10 @@ if __name__ == '__main__':
                     hist_offsets = []
                     for hq, ha in zip(a['hquestion'], a['hanswer']):
                         start = len(inp)
-                        inp += [make_tag('question')] + hq + [make_tag('answer'), [make_tag('yes'), make_tag('no')][ha]]
+                        inp += [make_tag('question')] + hq + [
+                            make_tag('answer'),
+                            [make_tag('yes'), make_tag('no')][ha]
+                        ]
                         end = len(inp)
                         hist_offsets.append((start, end))
                     inp += [sep]
@@ -286,7 +345,8 @@ if __name__ == '__main__':
                         input_ids.append(0)
                         pointer_mask.append(0)
 
-                    assert len(inp) == len(input_mask) == len(type_ids) == len(input_ids)
+                    assert len(inp) == len(input_mask) == len(type_ids) == len(
+                        input_ids)
 
                     ex['feat'] = {
                         'inp': inp,
@@ -296,8 +356,10 @@ if __name__ == '__main__':
                         'pointer_mask': torch.LongTensor(pointer_mask),
                         'spans': spans,
                         'hanswer': a['hanswer'],
-                        'hquestion_span': torch.LongTensor(a['hquestion_span']),
-                        'sentailed_span': torch.LongTensor(a['sentailed_span']),
+                        'hquestion_span':
+                        torch.LongTensor(a['hquestion_span']),
+                        'sentailed_span':
+                        torch.LongTensor(a['sentailed_span']),
                         'answer_start': start,
                         'answer_end': end,
                         'answer_class': clf,
@@ -309,14 +371,24 @@ if __name__ == '__main__':
 
                     stats['snippet_len'].append(len(ex['ann']['snippet']))
                     stats['scenario_len'].append(len(ex['ann']['scenario']))
-                    stats['history_len'].append(sum([len(q) + 3 for q in ex['ann']['hquestion']]))
+                    stats['history_len'].append(
+                        sum([len(q) + 3 for q in ex['ann']['hquestion']]))
                     stats['question_len'].append(len(ex['ann']['question']))
                     stats['inp_len'].append(sum(input_mask))
-                for k, v in sorted(list(stats.items()), key=lambda tup: tup[0]):
+                for k, v in sorted(list(stats.items()),
+                                   key=lambda tup: tup[0]):
                     print(k)
                     print('mean: {}'.format(sum(v) / len(v)))
                     print('min: {}'.format(min(v)))
                     print('max: {}'.format(max(v)))
-                preds = [{'utterance_id': e['utterance_id'], 'answer': detokenize(e['feat']['inp'][e['feat']['answer_start']:e['feat']['answer_end']+1])} for e in data]
+                preds = [{
+                    'utterance_id':
+                    e['utterance_id'],
+                    'answer':
+                    detokenize(
+                        e['feat']['inp']
+                        [e['feat']['answer_start']:e['feat']['answer_end'] +
+                         1])
+                } for e in data]
                 pprint(compute_metrics(preds, data))
                 torch.save(data, fproc)
