@@ -56,6 +56,9 @@ class Module(Base):
                 after = after[:after.index('eos')]
             s, e = ex['span']
             middle = detokenize(ex['inp'][s:e + 1])
+            print('$$$$$$$$$$$$$$$$$$$$$$')
+            print(middle)
+            print('^^^^^^^^^^^^^^^^^^^^^^^^6')
             preds.append({
                 'utterance_id':
                 ex['utterance_id'],
