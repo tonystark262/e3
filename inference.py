@@ -213,16 +213,16 @@ if __name__ == '__main__':
         with open(fretrieval, 'wt') as f:
             json.dump(retrieval_preds, f, indent=2)
 
-    if args.verify:
-        pprint(compute_metrics(retrieval_preds, raw))
+    # if args.verify:
+    #     pprint(compute_metrics(retrieval_preds, raw))
 
     if args.editor:
         editor_data = preprocess_editor(data, retrieval_preds)
 
-        # print('editor data')
-        # for key, val in editor_data[0].items():
-        #     if 'scores' not in key and 'words' != key:
-        #         pprint({key: val})
+        print('editor data')
+        for key, val in editor_data[0].items():
+            if 'scores' not in key and 'words' != key:
+                pprint({key: val})
 
         editor = EditorModule.load(args.editor,
                                    override_args={'data': args.data})
